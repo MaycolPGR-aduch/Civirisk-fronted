@@ -43,6 +43,22 @@ export const getRecentReports = async (limit = 20) => {
 };
 
 /**
+ * Retrieves report records by their IDs.
+ * @param {Array<string>} ids
+ */
+export const getReportsByIds = async (ids = []) => {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .in('id', ids);
+
+  if (error) throw error;
+  return data || [];
+};
+
+/**
  * Subscribes to real-time additions/modifications in the reports table.
  * @param {Function} callback
  * @returns {Function} Unsubscribe cleanup function

@@ -1,8 +1,8 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useLocation } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Menu } from 'lucide-react';
 
-const Topbar = () => {
+const Topbar = ({ toggleMobileMenu }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -29,7 +29,14 @@ const Topbar = () => {
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40">
       {/* Title */}
-      <div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={toggleMobileMenu}
+          className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg md:hidden cursor-pointer flex-shrink-0"
+          title="Abrir Menú"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight my-0">
           {getPageTitle()}
         </h1>

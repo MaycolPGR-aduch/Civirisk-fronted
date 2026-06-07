@@ -115,7 +115,7 @@ const Home = () => {
             Hola, {displayName}
           </h2>
           <p className="text-base text-blue-50/90 leading-relaxed font-medium">
-            Bienvenido a **CiviRisk AI**, la plataforma inteligente de seguridad ciudadana.
+            Bienvenido a <strong>CiviRisk AI</strong>, la plataforma inteligente de seguridad ciudadana.
             Reporta incidentes de infraestructura o seguridad en tu barrio y accede a análisis predictivos en tiempo real.
           </p>
 
@@ -182,8 +182,8 @@ const Home = () => {
             </div>
             
             <p className="text-sm text-slate-600 leading-relaxed">
-              **PI24** es un indicador predictivo generado mediante Inteligencia Artificial.
-              Estima la probabilidad de ocurrencia de incidentes de seguridad y orden urbano en las próximas **24 horas**,
+              <strong>PI24</strong> es un indicador predictivo generado mediante Inteligencia Artificial.
+              Estima la probabilidad de ocurrencia de incidentes de seguridad y orden urbano en las próximas <strong>24 horas</strong>,
               desglosado por zona geográfica y tipo de incidente.
             </p>
             

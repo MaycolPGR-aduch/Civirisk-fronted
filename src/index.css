@@ -25,5 +25,74 @@
   width: 100%;
   height: 100%;
   border-radius: 1rem;
-  z-index: 10;
+  z-index: 0;
+}
+
+/* Fix Leaflet controls z-index so they don't bleed out of container */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 400;
+}
+
+/* Fade-in animation used across pages */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
+
+/* Cluster icon reset */
+.custom-cluster-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Report icon reset */
+.custom-report-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Custom Leaflet Popup styling to make it premium */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 1.25rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  padding: 0.25rem;
+}
+
+.leaflet-popup-content {
+  margin: 14px 18px !important;
+  font-family: inherit;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: none;
+}
+
+.leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  font-weight: normal !important;
+  transition: color 0.15s ease;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #475569 !important;
+  background: transparent !important;
 }
