@@ -33,7 +33,7 @@ const HeatmapLayer = ({ points = [], visible = true }) => {
         if (heatRef.current && map && map.hasLayer(heatRef.current)) {
           map.removeLayer(heatRef.current);
         }
-      } catch (_) {
+      } catch {
         // ignore — map may already be gone
       }
       heatRef.current = null;
@@ -45,7 +45,7 @@ const HeatmapLayer = ({ points = [], visible = true }) => {
     if (!heatRef.current) return;
     try {
       heatRef.current.setLatLngs(points);
-    } catch (_) {
+    } catch {
       // ignore
     }
   }, [points]);
@@ -63,7 +63,7 @@ const HeatmapLayer = ({ points = [], visible = true }) => {
           map.removeLayer(heatRef.current);
         }
       }
-    } catch (_) {
+    } catch {
       // ignore
     }
   }, [map, visible]);

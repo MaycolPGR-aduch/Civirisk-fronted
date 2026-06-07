@@ -25,7 +25,6 @@ import {
   Users,
   MessageCircle,
   ShieldAlert,
-  CircleDot,
   Maximize2,
   X
 } from 'lucide-react';
@@ -305,12 +304,8 @@ const MapPage = () => {
     });
   };
 
-  const selectedReport = selectedPin?.last_report_id ? reportsById[selectedPin.last_report_id] : null;
   // A prediction always has incident_type; a standalone report has 'type' instead
   const selectedIsPrediction = selectedPin && selectedPin.incident_type !== undefined;
-  const selectedSourceLabel = selectedIsPrediction 
-    ? (selectedReport ? 'Predicción ML (con reporte)' : 'Predicción ML') 
-    : 'Reporte sin predicción';
 
   // Compute counts and representative max score per location so marker intensity and color are consistent
   const locationCounts = {};
