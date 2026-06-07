@@ -995,20 +995,26 @@ const MapPage = () => {
                         >
                           <Popup maxWidth={380} minWidth={280}>
                             <div className="space-y-3 text-sm p-0.5">
-                              <div className="flex items-center gap-2">
+                              {/* Prediction popup header — blue accent */}
+                              <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
                                 <span className="text-lg">{getIncidentTimeEmoji(pred.generated_at)}</span>
-                                <strong className="text-slate-800">{pred.zone_name}</strong>
+                                <div className="flex-1 min-w-0">
+                                  <strong className="text-slate-800 block truncate">{pred.zone_name}</strong>
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 text-[9px] font-bold uppercase tracking-wide mt-0.5">
+                                    ⚡ Predicción ML
+                                  </span>
+                                </div>
                               </div>
                               <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
-                                <div className="rounded-lg bg-slate-100 p-2">
+                                <div className="rounded-lg bg-blue-50 p-2">
                                   <span className="block font-semibold text-slate-800">Score</span>
                                   <span>{pred.score} / 100</span>
                                 </div>
-                                <div className="rounded-lg bg-slate-100 p-2">
+                                <div className="rounded-lg bg-blue-50 p-2">
                                   <span className="block font-semibold text-slate-800">Nivel</span>
                                   <span>{getRiskDetails(pred.score).label || getRiskDetails(pred.score).level}</span>
                                 </div>
-                                <div className="rounded-lg bg-slate-100 p-2 col-span-2">
+                                <div className="rounded-lg bg-blue-50 p-2 col-span-2">
                                   <span className="block font-semibold text-slate-800">Tipo</span>
                                   <span>{translateIncidentType(pred.incident_type)}</span>
                                 </div>
@@ -1059,20 +1065,26 @@ const MapPage = () => {
                       >
                         <Popup maxWidth={380} minWidth={280}>
                           <div className="space-y-3 text-sm p-0.5">
-                            <div className="flex items-center gap-2">
+                            {/* Standalone report popup header — indigo accent */}
+                            <div className="flex items-center gap-2 pb-2 border-b border-indigo-100">
                               <span className="text-lg">{getIncidentTimeEmoji(report.created_at)}</span>
-                              <strong className="text-slate-800">{report.zone_name || 'Reporte'}</strong>
+                              <div className="flex-1 min-w-0">
+                                <strong className="text-slate-800 block truncate">{report.zone_name || 'Reporte'}</strong>
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase tracking-wide mt-0.5">
+                                  📋 Reporte ciudadano
+                                </span>
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
-                              <div className="rounded-lg bg-slate-100 p-2">
+                              <div className="rounded-lg bg-indigo-50 p-2">
                                 <span className="block font-semibold text-slate-800">Tipo</span>
                                 <span>{translateIncidentType(report.type)}</span>
                               </div>
-                              <div className="rounded-lg bg-slate-100 p-2">
+                              <div className="rounded-lg bg-indigo-50 p-2">
                                 <span className="block font-semibold text-slate-800">Severidad</span>
                                 <span>{translateSeverity(report.severity)}</span>
                               </div>
-                              <div className="rounded-lg bg-slate-100 p-2 col-span-2">
+                              <div className="rounded-lg bg-indigo-50 p-2 col-span-2">
                                 <span className="block font-semibold text-slate-800">Estado</span>
                                 <span>Reporte sin predicción</span>
                               </div>
