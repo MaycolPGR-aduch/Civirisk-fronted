@@ -182,3 +182,13 @@
     border-right-color: var(--border);
   }
 }
+
+/* Custom marker tweaks: remove default borders and ensure pointer events behave */
+.custom-incident-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-incident-icon div {
+  pointer-events: none;
+}
