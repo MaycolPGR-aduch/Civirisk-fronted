@@ -14,6 +14,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import RiskBadge from '../components/ui/RiskBadge';
 import LoadingState from '../components/ui/LoadingState';
 import EmptyState from '../components/ui/EmptyState';
+import HeatmapLayer from '../components/ui/HeatmapLayer';
 import { 
   Filter, 
   Layers, 
@@ -41,6 +42,10 @@ const MapPage = () => {
   // Selected zone marker state
   const [selectedPin, setSelectedPin] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
+  // Legend tab state: 'predicciones' | 'reportes' | 'capas'
+  const [legendTab, setLegendTab] = useState('predicciones');
 
   // Zones from backend (fallback to local ZONES)
   const [zones, setZones] = useState([]);
@@ -156,7 +161,7 @@ const MapPage = () => {
     return '🌃';
   };
 
-  const getIncidentTypeIconSvg = (incidentType, color = '#ffffff', size = 18) => {
+  const getIncidentTypeIconSvg = (incidentType, color = '#28282aff', size = 20) => {
     const type = String(incidentType || 'default').toLowerCase();
     const icons = {
       robo: `<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" id="_x32_" width="${size}" height="${size}" fill="${color}" viewBox="0 0 512 512"><path d="M454.25 131.406c-16.344-38.641-43.609-71.453-77.938-94.656C342 13.563 300.5 0 256 0c-29.656 0-58 6.016-83.75 16.906-38.641 16.344-71.453 43.609-94.656 77.938-23.188 34.328-36.75 75.813-36.75 120.313v81.688c0 29.656 6.016 58 16.906 83.75 16.344 38.641 43.609 71.453 77.938 94.656C170 498.438 211.5 512 256 512c29.656 0 58-6.031 83.75-16.906 38.641-16.344 71.469-43.609 94.656-77.938s36.75-75.813 36.75-120.313v-81.688c0-29.655-6.015-57.999-16.906-83.749m-15.781 165.438c0 25.25-5.094 49.203-14.328 71.031-13.828 32.719-36.984 60.609-66.125 80.281-29.141 19.688-64.172 31.156-102.016 31.156-25.25 0-49.203-5.094-71.031-14.328-32.719-13.828-60.609-37-80.281-66.125C85 369.719 73.531 334.688 73.531 296.844v-81.688c0-25.234 5.094-49.203 14.328-71.031 13.828-32.719 36.984-60.609 66.125-80.281C183.125 44.156 218.156 32.688 256 32.688c25.25 0 49.203 5.094 71.031 14.328 32.719 13.828 60.609 37 80.281 66.125 19.688 29.141 31.156 64.172 31.156 102.016z"/><path d="M313.875 321.406h-115.75a50.95 50.95 0 0 0-36.094 14.969 51 51 0 0 0-14.969 36.125 50.94 50.94 0 0 0 14.969 36.109 50.8 50.8 0 0 0 36.094 14.953h115.75a50.87 50.87 0 0 0 36.109-14.953 51 51 0 0 0 14.953-36.109 51.04 51.04 0 0 0-14.953-36.125 51 51 0 0 0-36.109-14.969m20.703 71.797c-5.328 5.328-12.594 8.578-20.703 8.578h-115.75c-8.109 0-15.375-3.25-20.688-8.578-5.328-5.328-8.594-12.594-8.594-20.703 0-8.125 3.266-15.375 8.594-20.719 5.313-5.313 12.578-8.563 20.688-8.578h115.75c8.109.016 15.375 3.266 20.703 8.578 5.313 5.344 8.578 12.594 8.578 20.719 0 8.109-3.265 15.375-8.578 20.703m-10.484-247.422H187.906c-40.094 0-72.625 32.516-72.625 72.625s32.531 72.625 72.625 72.625c31.219 0 47.219-30.969 68.094-30.969s36.875 30.969 68.094 30.969c40.109 0 72.625-32.516 72.625-72.625s-32.516-72.625-72.625-72.625"/><path d="M300.938 363.406h-89.875c-5 0-9.078 4.063-9.078 9.094 0 5 4.078 9.063 9.078 9.063h89.875c5.016 0 9.078-4.063 9.078-9.063 0-5.031-4.063-9.094-9.078-9.094"/></svg>`,
@@ -179,7 +184,7 @@ const MapPage = () => {
     const scoreToUse = representativeScore !== null ? representativeScore : pred.score;
     const rDetails = getRiskDetails(scoreToUse);
     const baseHex = rDetails.level === 'alto' ? '#ef4444' : rDetails.level === 'medio' ? '#f59e0b' : '#10b981';
-    const iconSvg = getIncidentTypeIconSvg(pred.incident_type || pred.type, '#ffffff', 18);
+    const iconSvg = getIncidentTypeIconSvg(pred.incident_type || pred.type, '#28282aff', 20);
 
     // Normalize intensity from 0.15 .. 1.0 (few incidents -> low intensity)
     const intensity = Math.min(1, Math.max(0.01, count / Math.max(1, maxCount)));
@@ -272,7 +277,7 @@ const MapPage = () => {
   });
 
   const createStandaloneReportIcon = (report) => {
-    const iconSvg = getIncidentTypeIconSvg(report.type || 'default', '#ffffff', 18);
+    const iconSvg = getIncidentTypeIconSvg(report.type || 'default', '#28282aff', 20);
     const severityColors = {
       baja: '#9ca3af',
       media: '#6366f1',
@@ -329,6 +334,22 @@ const MapPage = () => {
     }
   });
   const maxLocationCount = Object.values(locationCounts).length ? Math.max(...Object.values(locationCounts)) : 1;
+
+  // Build heatmap points from filtered predictions + standalone reports
+  // Format: [lat, lng, intensity 0..1]
+  const heatmapPoints = [
+    ...filteredPredictions.map((pred) => {
+      const [lat, lng] = getLatLngForPred(pred);
+      const intensity = Math.min(1, Math.max(0.05, (Number(pred.score) || 0) / 100));
+      return [lat, lng, intensity];
+    }),
+    ...filteredStandaloneReports
+      .filter((r) => r.lat && r.lng)
+      .map((r) => {
+        const severityWeight = r.severity === 'alta' ? 0.7 : r.severity === 'media' ? 0.45 : 0.25;
+        return [Number(r.lat), Number(r.lng), severityWeight];
+      }),
+  ];
 
   // Render the complete detail structure for a selected pin
   const renderDetailsPanelContent = (pin) => {
@@ -770,39 +791,133 @@ const MapPage = () => {
               <Layers className="h-4 w-4 text-blue-600" />
               Leyenda
             </h3>
-            
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Predicciones ML</p>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2 font-medium text-slate-600">
-                  <span className="h-3 w-3 bg-red-500 border-2 border-white rounded-full shadow-sm"></span>
-                  Riesgo Alto
-                </span>
-                <span className="font-mono text-slate-400 font-bold">70–100</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2 font-medium text-slate-600">
-                  <span className="h-3 w-3 bg-amber-500 border-2 border-white rounded-full shadow-sm"></span>
-                  Riesgo Medio
-                </span>
-                <span className="font-mono text-slate-400 font-bold">40–69</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2 font-medium text-slate-600">
-                  <span className="h-3 w-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></span>
-                  Riesgo Bajo
-                </span>
-                <span className="font-mono text-slate-400 font-bold">0–39</span>
-              </div>
 
-              <div className="border-t border-slate-100 pt-3">
-                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2">Sin predicción</p>
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                  <CircleDot className="h-3 w-3 text-indigo-400" />
-                  Reporte pendiente
+            {/* Legend Tabs */}
+            <div className="flex rounded-xl bg-slate-100 p-0.5 gap-0.5">
+              {[
+                { key: 'predicciones', label: 'ML' },
+                { key: 'reportes', label: 'Reportes' },
+                { key: 'capas', label: 'Capas' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setLegendTab(tab.key)}
+                  className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all duration-150 cursor-pointer ${
+                    legendTab === tab.key
+                      ? 'bg-white text-slate-800 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab: Predicciones ML */}
+            {legendTab === 'predicciones' && (
+              <div className="space-y-2.5">
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Score de riesgo</p>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 font-medium text-slate-600">
+                    <span className="h-3 w-3 bg-red-500 border-2 border-white rounded-full shadow-sm"></span>
+                    Riesgo Alto
+                  </span>
+                  <span className="font-mono text-slate-400 font-bold">70–100</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 font-medium text-slate-600">
+                    <span className="h-3 w-3 bg-amber-500 border-2 border-white rounded-full shadow-sm"></span>
+                    Riesgo Medio
+                  </span>
+                  <span className="font-mono text-slate-400 font-bold">40–69</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 font-medium text-slate-600">
+                    <span className="h-3 w-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></span>
+                    Riesgo Bajo
+                  </span>
+                  <span className="font-mono text-slate-400 font-bold">0–39</span>
+                </div>
+                <div className="border-t border-slate-100 pt-2.5 space-y-1.5">
+                  <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Clusters</p>
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                    <span className="h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold shadow-sm">N</span>
+                    Agrupación de marcadores — color = riesgo más alto del grupo
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Tab: Reportes */}
+            {legendTab === 'reportes' && (
+              <div className="space-y-2.5">
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Reportes ciudadanos</p>
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  Los reportes sin predicción ML aún se muestran con borde punteado y color según severidad:
+                </p>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 font-medium text-slate-600">
+                    <span className="h-3 w-3 bg-rose-500 border-2 border-dashed border-rose-400 rounded-full"></span>
+                    Severidad Alta
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 font-medium text-slate-600">
+                    <span className="h-3 w-3 bg-indigo-500 border-2 border-dashed border-indigo-400 rounded-full"></span>
+                    Severidad Media
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 font-medium text-slate-600">
+                    <span className="h-3 w-3 bg-slate-400 border-2 border-dashed border-slate-300 rounded-full"></span>
+                    Severidad Baja
+                  </span>
+                </div>
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2.5 mt-1">
+                  <p className="text-[10px] text-indigo-700 font-medium leading-relaxed">
+                    El borde punteado distingue estos reportes de las predicciones ML. El análisis predictivo se generará automáticamente una vez procesados.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Capas */}
+            {legendTab === 'capas' && (
+              <div className="space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Capas visuales</p>
+                <button
+                  type="button"
+                  onClick={() => setShowHeatmap((v) => !v)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                    showHeatmap
+                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-base">🌡️</span>
+                    Mapa de calor
+                  </span>
+                  <span className={`h-4 w-7 rounded-full transition-colors duration-200 flex items-center ${showHeatmap ? 'bg-blue-400' : 'bg-slate-300'}`}>
+                    <span className={`h-3 w-3 rounded-full bg-white shadow-sm transform transition-transform duration-200 ml-0.5 ${showHeatmap ? 'translate-x-3' : 'translate-x-0'}`} />
+                  </span>
+                </button>
+                {showHeatmap && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Intensidad del calor</p>
+                    <div className="h-2.5 w-full rounded-full" style={{background: 'linear-gradient(to right, #312e81, #4f46e5, #06b6d4, #a3e635)'}}></div>
+                    <div className="flex justify-between text-[9px] text-slate-400 font-mono font-bold">
+                      <span>Menor</span>
+                      <span>Mayor</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 leading-relaxed pt-1">
+                      Los colores del mapa de calor (azul → cian → verde) son independientes de los marcadores para evitar confusión visual.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
         </div>
@@ -850,6 +965,9 @@ const MapPage = () => {
                       <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" />
                     </LayersControl.BaseLayer>
                   </LayersControl>
+
+                  {/* Heatmap layer — rendered below markers */}
+                  <HeatmapLayer points={heatmapPoints} visible={showHeatmap} />
 
                   <MarkerClusterGroup
                     chunkedLoading={true}
