@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { subscribeToRiskPredictions } from '../services/predictionsService';
 import { getRiskRanking, getZones as getZonesApi } from '../services/civiriskApi';
-import { getReportsByIds, getRecentReports } from '../services/reportsService';
+import { getReportsByIds, getRecentReports, subscribeToReports } from '../services/reportsService';
+import { applyRealtimeChange } from '../utils/realtime';
 import { translateIncidentType, translateSeverity, translateLighting, translatePeopleFlow, formatDate } from '../utils/formatters';
 import { getRiskDetails } from '../utils/risk';
 import { ZONES } from '../data/zones';
@@ -51,7 +52,16 @@ const MapPage = () => {
   const [reportsById, setReportsById] = useState({});
   const [standaloneReports, setStandaloneReports] = useState([]);
 
+  // Refs espejo para que los handlers realtime lean el estado actual sin closures obsoletos,
+  // y secuencia de peticiones para descartar refetches lentos que llegan tarde.
+  const reqIdRef = useRef(0);
+  const predictionsRef = useRef([]);
+  const reportsByIdRef = useRef({});
+  useEffect(() => { predictionsRef.current = predictions; }, [predictions]);
+  useEffect(() => { reportsByIdRef.current = reportsById; }, [reportsById]);
+
   const fetchData = async () => {
+    const reqId = ++reqIdRef.current;
     try {
       setLoading(true);
       const [data, zonesApi] = await Promise.all([
@@ -100,6 +110,8 @@ const MapPage = () => {
       const predictionReportIds = new Set(normalizedPredictions.map(p => p.last_report_id).filter(Boolean));
       const standalone = allReports.filter(report => !predictionReportIds.has(report.id));
 
+      if (reqId !== reqIdRef.current) return; // respuesta obsoleta, descártala
+
       setPredictions(normalizedPredictions);
       setZones(zonesApi || []);
       setReportsById(reportsMap);
@@ -109,10 +121,11 @@ const MapPage = () => {
       if (normalizedPredictions.length > 0) setSelectedPin(normalizedPredictions[0]);
       else if (standalone.length > 0) setSelectedPin(standalone[0]);
     } catch (err) {
+      if (reqId !== reqIdRef.current) return;
       console.error(err);
       setErrorMsg('No se pudieron cargar las predicciones de riesgo.');
     } finally {
-      setLoading(false);
+      if (reqId === reqIdRef.current) setLoading(false);
     }
   };
 
@@ -123,21 +136,47 @@ const MapPage = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.resolve().then(() => {
-      if (active) {
-        fetchData();
+    Promise.resolve().then(() => { if (active) fetchData(); }); // carga inicial (fuente de verdad)
+
+    // Predicciones ML: se aplican de forma incremental usando el payload del evento.
+    const unsubPred = subscribeToRiskPredictions(async (payload) => {
+      setPredictions((prev) => applyRealtimeChange(prev, payload, {
+        sort: (a, b) => (Number(b.score) || 0) - (Number(a.score) || 0),
+      }));
+
+      const reportId = payload.new?.last_report_id;
+      if (reportId) {
+        // El reporte ya está cubierto por una predicción: quítalo de "standalone".
+        setStandaloneReports((prev) => prev.filter((r) => r.id !== reportId));
+        // Trae sólo el reporte vinculado (1 fila) para enriquecer coords/descripción.
+        if (!reportsByIdRef.current[reportId]) {
+          try {
+            const [rep] = await getReportsByIds([reportId]);
+            if (rep) setReportsById((prev) => ({ ...prev, [rep.id]: rep }));
+          } catch (e) {
+            console.warn('No se pudo enriquecer el reporte vinculado:', e);
+          }
+        }
       }
     });
 
-    // Listen to realtime updates
-    const unsubscribe = subscribeToRiskPredictions((payload) => {
-      console.log('Realtime prediction update:', payload);
-      fetchData(); // Reload predictions
+    // Reportes ciudadanos: aparecen al instante como marcadores "sin predicción".
+    const unsubReports = subscribeToReports((payload) => {
+      const row = payload.new;
+      // Si ya existe una predicción para este reporte, no lo mostramos como standalone.
+      const covered = row && predictionsRef.current.some((p) => p.last_report_id === row.id);
+      setStandaloneReports((prev) => {
+        if (covered) return prev.filter((r) => r.id !== row.id);
+        return applyRealtimeChange(prev, payload, {
+          sort: (a, b) => new Date(b.created_at) - new Date(a.created_at),
+        });
+      });
     });
 
     return () => {
       active = false;
-      unsubscribe();
+      unsubPred();
+      unsubReports();
     };
   }, []);
 

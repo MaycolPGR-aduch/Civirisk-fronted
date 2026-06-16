@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { getRiskPredictions, subscribeToRiskPredictions } from '../services/predictionsService';
 import { getRecentReports, subscribeToReports } from '../services/reportsService';
+import { applyRealtimeChange } from '../utils/realtime';
 import {
   translateIncidentType,
   translateSeverity,
@@ -165,20 +166,27 @@ const Dashboard = () => {
   const [loading, setLoading]         = useState(true);
   const [errorMsg, setErrorMsg]       = useState('');
 
+  // Secuencia de peticiones: sólo la respuesta más reciente puede escribir el estado.
+  // Evita que un refetch lento sobrescriba datos más nuevos (ej. actualizaciones realtime).
+  const reqIdRef = useRef(0);
+
   const fetchData = async () => {
+    const reqId = ++reqIdRef.current;
     try {
       const [predictionsData, reportsData] = await Promise.all([
         getRiskPredictions(),
         getRecentReports(200)
       ]);
+      if (reqId !== reqIdRef.current) return; // respuesta obsoleta, descártala
       setPredictions(predictionsData);
       setReports(reportsData);
       setErrorMsg('');
     } catch (err) {
+      if (reqId !== reqIdRef.current) return;
       console.error(err);
       setErrorMsg('No se pudieron cargar los datos del dashboard.');
     } finally {
-      setLoading(false);
+      if (reqId === reqIdRef.current) setLoading(false);
     }
   };
 
@@ -186,9 +194,21 @@ const Dashboard = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.resolve().then(() => { if (active) fetchData(); });
-    const unsubPred = subscribeToRiskPredictions(() => fetchData());
-    const unsubRep  = subscribeToReports(() => fetchData());
+    Promise.resolve().then(() => { if (active) fetchData(); }); // carga inicial (fuente de verdad)
+
+    // Tras la carga inicial, cada evento se aplica de forma incremental usando el
+    // payload del propio evento — sin recargar todo desde el servidor.
+    const unsubPred = subscribeToRiskPredictions((payload) => {
+      setPredictions((prev) => applyRealtimeChange(prev, payload, {
+        sort: (a, b) => (b.score || 0) - (a.score || 0),
+      }));
+    });
+    const unsubRep = subscribeToReports((payload) => {
+      setReports((prev) => applyRealtimeChange(prev, payload, {
+        sort: (a, b) => new Date(b.created_at) - new Date(a.created_at),
+      }));
+    });
+
     return () => { active = false; unsubPred(); unsubRep(); };
   }, []);
 
